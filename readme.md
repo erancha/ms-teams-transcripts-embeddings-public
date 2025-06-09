@@ -62,7 +62,6 @@ The system maintains webhook subscriptions through automated renewal processes, 
 - Secure authentication and data handling
 - Scalable serverless architecture
 - Automated subscription management
-- Token-optimized prompt engineering
 
 # Architecture
 
