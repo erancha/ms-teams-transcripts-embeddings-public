@@ -53,44 +53,6 @@ This project uses Microsoft Graph API's webhook notifications to enable real-tim
 
 ### Serverless Processing Pipeline Flow
 
-```
-+----------------+     webhook     +-------------------+
-|    MS Teams    |---------------->|    AWS Lambda     |
-| Transcript     |   notification  |  Webhook Handler  |
-+----------------+                 +--------+----------+
-                                           |
-                                           | queue message
-                                           v
-                                  +------------------+
-                                  |    AWS SQS       |
-                                  |      Queue       |
-                                  +--------+---------+
-                                           |
-                                           | dequeue
-                                           v
-                          +--------------------------------+
-                          |          AWS Lambda            |
-                          |      Transcript Processor      |
-                          +---------------+----------------+
-                                         |
-                            +------------+------------+
-                            |                         |
-                      generate                    archive
-                            |                         |
-                            v                         v
-                    +--------------+        +--------------+
-                    | Embeddings   |        |      S3      |
-                    | via LLM      |        |    Bucket    |
-                    +--------------+        +--------------+
-                            |
-                            | store
-                            v
-                    +--------------+
-                    |   Pinecone   |
-                    |  Vector DB   |
-                    +--------------+
-```
-
 ```mermaid
 flowchart LR
     A[MS Teams
