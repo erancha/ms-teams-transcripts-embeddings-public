@@ -4,7 +4,7 @@
 - [Overview](#overview)
   - [Key Features](#key-features)
 - [Architecture](#architecture)
-- [Part 1: Development Setup](#part-1-development-setup)
+- [Part 1: Setup](#part-1-setup)
   - [Overview](#overview-1)
   - [Prerequisites](#prerequisites)
   - [Step 1: Azure AD Setup (One-time)](#step-1-azure-ad-setup-one-time)
@@ -18,6 +18,7 @@
   - [Using the Service](#using-the-service)
   - [AWS Lambda: WebHook handler](#aws-lambda-webhook-handler)
   - [AWS Lambda: Transcript Processor](#aws-lambda-transcript-processor)
+  - [AWS Lambda: Embeddings Forwarder](#aws-lambda-embeddings-forwarder)
 - [LLM Integration](#llm-integration)
   - [Cost Analysis](#cost-analysis)
     - [Understanding Token-Based Pricing](#understanding-token-based-pricing)
@@ -25,10 +26,11 @@
       - [Typical Interview Analysis](#typical-interview-analysis)
       - [Cost Breakdown (per transcript)](#cost-breakdown-per-transcript)
       - [Budget Planning](#budget-planning)
-  - [Prompt Engineering Guide](#prompt-engineering-guide)
-    - [Core Principles](#core-principles)
-    - [Example Prompt Template](#example-prompt-template)
-    - [Token Optimization](#token-optimization)
+  - [Supported Embedding Models](#supported-embedding-models)
+    - [OpenAI](#openai)
+    - [AWS Bedrock](#aws-bedrock)
+    - [Embedding Strategy](#embedding-strategy)
+    - [Text Preprocessing for Embeddings](#text-preprocessing-for-embeddings)
 - [Appendix (phase 2+): Webhook Security](#appendix-phase-2-webhook-security)
   - [Signature Verification](#signature-verification)
   - [Mutual TLS (mTLS)](#mutual-tls-mtls)
@@ -59,7 +61,7 @@ This project uses Microsoft Graph API's webhook notifications to capture new tra
 
 # Architecture
 
-![Architecture Diagram](https://lucid.app/publicSegments/view/c2473c07-a7c8-4ecc-8da1-2cb63f24f7ea/image.jpeg)
+![Architecture Diagram](https://lucid.app/publicSegments/view/e8b9ea33-bb3e-49c8-8900-5d96ef36b0a2/image.jpeg)
 
 1. **Microsoft Teams Integration**
 
@@ -78,8 +80,9 @@ This project uses Microsoft Graph API's webhook notifications to capture new tra
 3. **Storage Layer**
    - S3 for raw transcript archival
    - DynamoDB for structured data
+   - Pinecone for embeddings
 
-# Part 1: Development Setup
+# Part 1: Setup
 
 ## Overview
 
@@ -93,7 +96,7 @@ This section is a setup for development:
 1. **Microsoft 365 Account** with Teams and ability to record meetings.
 2. **Azure Account** (can use free tier) - Required for app registration.
 3. **Node.js** installed on the development machine.
-4. **AWS Account** - For hosting the webhook endpoint
+4. **AWS Account** - For hosting the webhook endpoint.
 
 ## Step 1: Azure AD Setup (One-time)
 
@@ -127,11 +130,11 @@ This section is a setup for development:
 
 ### Collect Configuration Values
 
-Find and save these values from the app registration "Overview" page and fill in [scripts/setup/.env](scripts/setup/.env):
+Find and save these values from the app registration "Overview" page and fill in [src/setup/.env](src/setup/.env):
 
 - **Tenant ID**
 - **Client ID**
-- **Client Secret** (from previous step)
+- **Client Secret** (from the previous step)
 
 ## Step 2: Webhook Registration / Renewal
 
@@ -195,33 +198,34 @@ Processes queued Teams webhook notifications. Key responsibilities:
 - Generates embeddings.
 - Stores processed data in DynamoDB.
 
+## AWS Lambda: Embeddings Forwarder
+
+[src/runtime/embeddings-forwarder.js](src/runtime/embeddings-forwarder.js)
+
+Forwards selected data from DynamoDB Streams to Pinecone vector database. Key responsibilities:
+
+- Processes DynamoDB Stream events (INSERT and MODIFY) containing transcript data and embeddings.
+- Extracts key fields including transcript text, candidate email, participants, timestamps, and embedding vectors.
+- Truncates transcript text to stay within Pinecone metadata size limits (~15KB).
+- Upserts vectors with metadata into Pinecone index for semantic search capabilities.
+- Manages secure access to Pinecone credentials via AWS Secrets Manager.
+
 # LLM Integration
 
-While the examples below reference OpenAI's models, the architecture is designed to be model-agnostic. It supports integration with various LLM providers, including AWS Bedrock models, Amazon SageMaker endpoints, and other compatible services.
+While the examples below reference OpenAI's models, the architecture is designed to be model-agnostic. It supports integration with various LLM providers, including AWS Bedrock models, and other compatible services. See [Supported Embedding Models](#supported-embedding-models) for details.
 
 ## Cost Analysis
 
 ### Understanding Token-Based Pricing
 
-OpenAI's API pricing structure has three components:
+This project uses OpenAI's text-embedding-ada-002 model (aka ada-002) for generating embeddings. The pricing structure is straightforward:
 
-1. **Input Tokens** ($0.0010 / 1K tokens)
+**Embedding Tokens** ($0.0001 / 1K tokens)
 
-   - Raw transcript text
-   - System prompts and instructions
-   - Each token ≈ 4 characters in English
-   - Primary cost driver (~75% of total)
-
-2. **Cached Input** ($0.0002 / 1K tokens)
-
-   - System prompts and templates
-   - Reused across multiple transcripts
-   - Minimal impact on total cost (~5%)
-
-3. **Output Tokens** ($0.0020 / 1K tokens)
-   - Structured candidate data
-   - Generated embeddings
-   - ~20% of total processing cost
+- Each token ≈ 4 characters in English
+- Both input text and generated embeddings are counted in this price
+- Very cost-effective for semantic search use cases
+- Generates 1536-dimensional embedding vectors
 
 ### Processing Costs
 
@@ -245,76 +249,68 @@ OpenAI's API pricing structure has three components:
 - Quarterly (300 interviews): $1.23-$2.01
 - Annual (1,200 interviews): $4.92-$8.04
 
-## Prompt Engineering Guide
+## Supported Embedding Models
 
-### Core Principles
+The system supports multiple embedding models through different providers:
 
-1. **Structured Instructions**
+### OpenAI
 
-   - Break complex tasks into clear steps
-   - Specify exact data points to extract
-   - Define output format (JSON structure)
-   - Include validation requirements
+- **text-embedding-ada-002** (aka ada-002)
+  - 1536-dimensional embeddings
+  - 8K token context window
+  - Best-in-class performance for semantic search
+  - $0.0001 per 1K tokens
 
-2. **Context Setting**
+### AWS Bedrock
 
-   - Specify interview/meeting type
-   - Define participant roles
-   - Indicate industry context
-   - Note any special terminology
+- **amazon.titan-embed-text-v1**
 
-3. **Format Control**
-   - Use consistent JSON schema
-   - Specify data types for fields
-   - Define enumerated values
-   - Include validation rules
+  - Native AWS solution
+  - 8,192 token limit (~38,500 characters for English text)
+  - Pay-as-you-go AWS pricing
 
-### Example Prompt Template
+- **cohere.embed-english-v3**
 
-```text
-Analyze this initial recruiter screening call transcript.
+  - Supports up to 512K tokens
+  - Optimized for English text
 
-Context:
-- Interview type: Initial screening call
-- Purpose: Assess candidate fit and requirements
-- Focus areas: Experience, motivations, expectations
+- **cohere.embed-multilingual-v3**
+  - Supports up to 512K tokens
+  - Handles multiple languages effectively
 
-Extract the following information:
-1. Career history
-   - Current/previous roles
-   - Reasons for transitions
-   - Key achievements
+The model can be configured via the `EMBEDDING_MODEL` environment variable in the format:
 
-2. Job preferences
-   - Desired role type
-   - Work arrangement (remote/hybrid/onsite)
-   - Company culture preferences
+- OpenAI models: `openai.ada-002`
+- AWS models: `amazon.titan-embed-text-v1`, `cohere.embed-english-v3`, etc.
 
-3. Practical requirements
-   - Notice period/availability
-   - Salary expectations
-   - Location/relocation flexibility
+### Embedding Strategy
 
-4. Technical background
-   - Self-reported skill areas
-   - Recent project types
-   - Tools/technologies mentioned
+While it might seem intuitive to summarize text before embedding to capture key points, we recommend embedding the full transcript text directly because:
 
-Provide structured output focusing on candidate's narrative and stated preferences.
-```
+1. **Information Preservation**: Modern embedding models (especially with 1536 dimensions) are specifically trained to capture semantic relationships in high-dimensional space, preserving nuanced meaning
+2. **Cost Efficiency**: Direct embedding is more cost-effective than running both summarization and embedding
+3. **Search Flexibility**: Full text embeddings allow searching for specific details that might have been omitted in a summary
+4. **Accuracy**: Summarization could introduce bias or lose important context that the embedding model would have captured
 
-### Token Optimization
+### Text Preprocessing for Embeddings
 
-1. **Input Efficiency**
+To optimize text before generating embeddings:
 
-   - Clear, concise instructions
-   - Reusable system prompts
-   - Minimal repetition
+1. **Basic Cleanup**
 
-2. **Output Control**
-   - Structured data over prose
-   - Specific field constraints
-   - Enumerated response options
+   - Remove redundant whitespace and empty lines
+   - Fix common transcription artifacts (repeated words, filler sounds)
+   - Normalize text case when appropriate
+
+2. **Chunking Strategy**
+   - For long transcripts exceeding model limits:
+     - Split at natural boundaries (speaker turns, topics)
+     - Maintain context in each chunk
+     - Consider overlap between chunks
+   - Use model-specific token limits:
+     - OpenAI ada-002: 8K tokens
+     - Titan: 8,192 tokens
+     - Cohere: 512K tokens
 
 # Appendix (phase 2+): Webhook Security
 
@@ -354,4 +350,4 @@ The combination of HTTPS transport encryption with HMAC signature verification r
 
 Note: The architecture is designed with extensibility in mind, allowing for integration with various messaging and communication platforms beyond MS teams, for example Whatsapp. The core components and processing pipeline (Webhook Handler, SQS, Transcript Processor) should be designed to be adaptable to support additional data sources while maintaining consistent data processing and analysis capabilities.
 
-![Architecture Diagram](https://lucid.app/publicSegments/view/c2473c07-a7c8-4ecc-8da1-2cb63f24f7ea/image.jpeg)
+![Architecture Diagram](https://lucid.app/publicSegments/view/e8b9ea33-bb3e-49c8-8900-5d96ef36b0a2/image.jpeg)

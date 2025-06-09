@@ -1,11 +1,13 @@
+
+
 <!-- toc -->
 
 - [Teams Transcripts to Webhook Lambda - Registration Summary](#teams-transcripts-to-webhook-lambda---registration-summary)
-  - [Overview](#overview)
-  - [Process](#process)
-    - [Step 1: Azure AD App Registration (one time)](#step-1-azure-ad-app-registration-one-time)
-    - [Step 2: Per-Teams-Tenant Admin Consent](#step-2-per-teams-tenant-admin-consent)
-  - [Summary](#summary)
+  * [Overview](#overview)
+  * [Process](#process)
+    + [Step 1: Azure AD App Registration (one time)](#step-1-azure-ad-app-registration-one-time)
+    + [Step 2: Per-Teams-Tenant Admin Consent](#step-2-per-teams-tenant-admin-consent)
+  * [Summary](#summary)
 
 <!-- tocstop -->
 
@@ -31,8 +33,9 @@ This document summarizes the process for registering an application to send Micr
 
 Create single app registration with required permissions in your Azure AD tenant:
 
-- `OnlineMeetings.Read.All` (for meeting transcripts)
-- `CallRecords.Read.All` (for call records)
+- `CallRecords.Read.All` - For accessing call recordings
+- `OnlineMeetings.Read.All` - For meeting information
+- `OnlineMeetingTranscript.Read.All` - For transcript access
 
 ### Step 2: Per-Teams-Tenant Admin Consent
 
