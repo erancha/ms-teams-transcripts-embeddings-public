@@ -49,7 +49,70 @@ Requirements: To process transcripts from Microsoft Teams meeting into embedding
 
 # Overview
 
-This project uses Microsoft Graph API's webhook notifications to capture new transcripts as they become available, process them using an LLM provider, and store the resulting embeddings for later use.
+This project uses Microsoft Graph API's webhook notifications to enable real-time processing of Teams meeting transcripts. When a new transcript becomes available, Microsoft Graph sends an HTTP notification to our webhook endpoint. This triggers a serverless processing pipeline that retrieves the transcript, processes it using an LLM provider to generate embeddings, and stores them for later use. The system maintains webhook subscriptions through automated renewal processes, ensuring continuous real-time notifications for new transcripts across the organization.
+
+### Serverless Processing Pipeline Flow
+
+```
++----------------+     webhook     +-------------------+
+|    MS Teams    |---------------->|    AWS Lambda     |
+| Transcript     |   notification  |  Webhook Handler  |
++----------------+                 +--------+----------+
+                                           |
+                                           | queue message
+                                           v
+                                  +------------------+
+                                  |    AWS SQS       |
+                                  |      Queue       |
+                                  +--------+---------+
+                                           |
+                                           | dequeue
+                                           v
+                          +--------------------------------+
+                          |          AWS Lambda            |
+                          |      Transcript Processor      |
+                          +---------------+----------------+
+                                         |
+                            +------------+------------+
+                            |                         |
+                      generate                    archive
+                            |                         |
+                            v                         v
+                    +--------------+        +--------------+
+                    | Embeddings   |        |      S3      |
+                    | via LLM      |        |    Bucket    |
+                    +--------------+        +--------------+
+                            |
+                            | store
+                            v
+                    +--------------+
+                    |   Pinecone   |
+                    |  Vector DB   |
+                    +--------------+
+```
+
+```mermaid
+flowchart LR
+    A[MS Teams
+Transcript Ready] -->|Webhook
+Notification| B[AWS Lambda
+Webhook Handler]
+    B -->|Queue Message| C[AWS SQS Queue]
+    C -->|Dequeue| D[AWS Lambda
+Transcript Processor]
+    D -->|Generate| E[Embeddings via
+LLM Provider]
+    D -->|Archive| F[(S3 Bucket)]
+    E -->|Store| G[(Pinecone
+Vector DB)]
+    style A fill:#E7E7E7
+    style B fill:#FF9900
+    style C fill:#FF9900
+    style D fill:#FF9900
+    style E fill:#00A4EF
+    style F fill:#FF9900
+    style G fill:#00A4EF
+```
 
 ## Key Features
 
