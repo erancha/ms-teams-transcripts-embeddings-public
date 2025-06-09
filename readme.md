@@ -144,7 +144,7 @@ Find and save these values from the app registration "Overview" page and fill in
 
 1. **Register Webhook**:
 
-   One-time webhook setup with Microsoft Graph: Create a subscription in Microsoft Graph API to receive transcript notifications
+   One-time webhook setup with Microsoft Graph: Create a subscription in Microsoft Graph API to receive transcript notifications. Only one active subscription is needed - the script will check for existing subscriptions before creating a new one.
 
    [scripts/setup/webhook.ps1](scripts/setup/webhook.ps1)
 
@@ -152,11 +152,13 @@ Find and save these values from the app registration "Overview" page and fill in
    ./scripts/setup/webhook.ps1 -mode Register
    ```
 
-   [src/setup/register-webhook.js](src/setup/register-webhook.js) , [src/setup/subscription.js](src/setup/subscription.js) , [src/setup/auth.js](src/setup/auth.js)
+   [src/setup/register-webhook-cli.js](src/setup/register-webhook-cli.js), [src/setup/core/subscription-manager.js](src/setup/core/subscription-manager.js), [src/setup/auth-cli.js](src/setup/auth-cli.js)
 
-2. **Configure Auto-renewal**:
+2. **Subscription Renewal**:
 
-   Set this up as a scheduled task (daily) to renew the subscription
+   The subscription is automatically renewed daily by the `AutoRenewSubscription` Lambda function.
+
+   For manual renewal if needed:
 
    [scripts/setup/webhook.ps1](scripts/setup/webhook.ps1)
 
@@ -164,7 +166,7 @@ Find and save these values from the app registration "Overview" page and fill in
    ./scripts/setup/webhook.ps1 -mode Renew
    ```
 
-   [src/setup/renew-subscription.js](src/setup/renew-subscription.js)
+   Implementation: [src/setup/auto-renew-handler.js](src/setup/auto-renew-handler.js), [src/setup/renew-subscription-cli.js](src/setup/renew-subscription-cli.js)
 
 ## Staging / Production
 
