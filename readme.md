@@ -49,32 +49,12 @@ Requirements: To process transcripts from Microsoft Teams meeting into embedding
 
 # Overview
 
-This project uses Microsoft Graph API's webhook notifications to enable real-time processing of Teams meeting transcripts. When a new transcript becomes available, Microsoft Graph sends an HTTP notification to our webhook endpoint. This triggers a serverless processing pipeline that retrieves the transcript, processes it using an LLM provider to generate embeddings, and stores them for later use. The system maintains webhook subscriptions through automated renewal processes, ensuring continuous real-time notifications for new transcripts across the organization.
+This project uses Microsoft Graph API's webhook notifications to enable real-time processing of Teams meeting transcripts.
 
-### Serverless Processing Pipeline Flow
+When a new transcript becomes available, Microsoft Graph sends an HTTP notification to our webhook endpoint. This triggers a serverless processing pipeline that retrieves the transcript, processes it using an LLM provider to generate embeddings, and stores them for later use.
+Please see the [Architecture](#architecture) section below for more details.
 
-```mermaid
-flowchart LR
-    A[MS Teams
-Transcript Ready] -->|Webhook
-Notification| B[AWS Lambda
-Webhook Handler]
-    B -->|Queue Message| C[AWS SQS Queue]
-    C -->|Dequeue| D[AWS Lambda
-Transcript Processor]
-    D -->|Generate| E[Embeddings via
-LLM Provider]
-    D -->|Archive| F[(S3 Bucket)]
-    E -->|Store| G[(Pinecone
-Vector DB)]
-    style A fill:#E7E7E7
-    style B fill:#FF9900
-    style C fill:#FF9900
-    style D fill:#FF9900
-    style E fill:#00A4EF
-    style F fill:#FF9900
-    style G fill:#00A4EF
-```
+The system maintains webhook subscriptions through automated renewal processes, ensuring continuous real-time notifications for new transcripts across the organization.
 
 ## Key Features
 
