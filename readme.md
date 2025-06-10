@@ -65,7 +65,7 @@ The system maintains webhook subscriptions through automated renewal processes, 
 
 # Architecture
 
-![Architecture Diagram](https://lucid.app/publicSegments/view/e8b9ea33-bb3e-49c8-8900-5d96ef36b0a2/image.jpeg)
+![Architecture Diagram](https://lucid.app/publicSegments/view/396bb585-25cf-441a-beee-c13dbd4453bd/image.jpeg)
 
 1. **Microsoft Teams Integration**
 
@@ -152,15 +152,13 @@ Find and save these values from the app registration "Overview" page and fill in
    ./scripts/setup/webhook.ps1 -mode Register
    ```
 
-   [src/setup/register-webhook-cli.js](src/setup/register-webhook-cli.js), [src/setup/core/subscription-manager.js](src/setup/core/subscription-manager.js), [src/setup/auth-cli.js](src/setup/auth-cli.js)
+   Implementation: [src/setup/register-webhook-cli.js](src/setup/register-webhook-cli.js), [src/setup/core/subscription-manager.js](src/setup/core/subscription-manager.js), [src/setup/auth-cli.js](src/setup/auth-cli.js)
 
 2. **Subscription Renewal**:
 
-   The subscription is automatically renewed daily by the `AutoRenewSubscription` Lambda function.
+   The subscription is automatically renewed daily by the [src/setup/auto-renew-handler.js](src/setup/auto-renew-handler.js) Lambda function.
 
    For manual renewal if needed:
-
-   [scripts/setup/webhook.ps1](scripts/setup/webhook.ps1)
 
    ```powershell
    ./scripts/setup/webhook.ps1 -mode Renew
@@ -356,4 +354,4 @@ The combination of HTTPS transport encryption with HMAC signature verification r
 
 Note: The architecture is designed with extensibility in mind, allowing for integration with various messaging and communication platforms beyond MS teams, for example Whatsapp. The core components and processing pipeline (Webhook Handler, SQS, Transcript Processor) should be designed to be adaptable to support additional data sources while maintaining consistent data processing and analysis capabilities.
 
-![Architecture Diagram](https://lucid.app/publicSegments/view/e8b9ea33-bb3e-49c8-8900-5d96ef36b0a2/image.jpeg)
+![Architecture Diagram](https://lucid.app/publicSegments/view/396bb585-25cf-441a-beee-c13dbd4453bd/image.jpeg)
