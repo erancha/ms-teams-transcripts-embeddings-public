@@ -7,7 +7,7 @@
 - [Part 1: Setup](#part-1-setup)
   - [Overview](#overview-1)
   - [Prerequisites](#prerequisites)
-  - [Step 1: Azure AD Setup (One-time)](#step-1-azure-ad-setup-one-time)
+  - [Step 1: Azure AD Setup (one-time)](#step-1-azure-ad-setup-one-time)
     - [Create App Registration](#create-app-registration)
     - [Configure API Permissions](#configure-api-permissions)
     - [Create Client Secret](#create-client-secret)
@@ -92,8 +92,8 @@ The system maintains webhook subscriptions through automated renewal processes, 
 
 This section is a setup for development:
 
-1. Azure AD Setup (one-time) - Registers an application to access Teams data.
-2. Webhook Registration (+ /Renewal) - Sets up the connection between Teams and this service.
+1. [Azure AD Setup (one-time)](#step-1-azure-ad-setup-one-time) - Registers an application to access Teams data.
+2. [Webhook Registration (+ Renewal)](#step-2-webhook-registration--renewal) - Sets up the connection between Teams and this service.
 
 ## Prerequisites
 
@@ -102,7 +102,7 @@ This section is a setup for development:
 3. **Node.js** installed on the development machine.
 4. **AWS Account** - For hosting the webhook endpoint.
 
-## Step 1: Azure AD Setup (One-time)
+## Step 1: Azure AD Setup (one-time)
 
 ### Create App Registration
 
@@ -168,9 +168,10 @@ Find and save these values from the app registration "Overview" page and fill in
 
 ## Staging / Production
 
-This section summarizes the steps for using the solution in staging and production:
-
+For deploying to production or setting up additional organizations, refer to:
 [teams-transcripts-to-Webhook-registration-summary.md](teams-transcripts-to-Webhook-registration-summary.md)
+
+Note: The Azure AD app registration and permissions setup described above is a one-time development step. New organizations only need to grant consent to your existing app registration.
 
 # Part 2: Runtime
 
