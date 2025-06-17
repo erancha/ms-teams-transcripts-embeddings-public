@@ -69,13 +69,11 @@ Get-CsApplicationAccessPolicy -Identity "TranscriptAccess"
 
 #### Step 2.3: Share tenant ID for webhook registration
 
-After completing the admin consent and Teams access policy setup:
+After completing the admin consent and Teams access policy setup, the tenant admin should:
 
-1. Locate your tenant ID (Directory ID, a UUID) from Azure Active Directory
+1. Locate their tenant ID (Directory ID, a UUID) from Azure Active Directory
 2. Share the tenant ID with us
-3. We will register and manage the webhook subscription for your tenant using our centralized management system
-
-No additional setup is required on your end. We handle all webhook registration, renewal, and management using our application credentials.
+3. We will register and manage the webhook subscription for the tenants using our centralized management system
 
 ## Summary
 
